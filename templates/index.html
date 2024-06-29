@@ -72,18 +72,11 @@
 
         function drawChart(root) {
             var nodes = partition.nodes(root);
-            // Calculate maxdepth from the dataset
             var maxdepth = d3.max(nodes, function(d) { return d.depth; });
-        
-            // Define the number of levels to display initially
             var levels = 5;
-        
-            // Adjust y-scale for initial nodes
             y.domain([0, levels / maxdepth]).range([0, maxradius]);
-        
-            // Filter initial nodes based on the specified number of levels
             var initialNodes = nodes.filter(function(d) { return d.depth < levels; });
-        
+
             var path = svg.selectAll("path")
                 .data(initialNodes)
                 .enter().append("path")
@@ -91,26 +84,25 @@
                 .style("fill", fillColor);
 
             var sizeCriterion = 12;
-
             var nonClickablePaths = path.filter(function(d) {
                 var r = y(d.y + d.dy / 2);
                 var theta = x(d.x + d.dx) - x(d.x);
                 return r * theta < sizeCriterion;
             });
-        
+
             var clickablePaths = path.filter(function(d) {
                 return !nonClickablePaths.data().includes(d);
             });
-        
+
             clickablePaths.on("click", click)
                 .on("mouseover", mouseover)
                 .on("mouseout", mouseout);
-        
+
             updateNodeCount(initialNodes);
 
             function click(d) {
                 svg.selectAll("text").style("visibility", "hidden");
-            
+
                 $.ajax({
                     url: "/subtree",
                     type: "POST",
@@ -121,17 +113,16 @@
                             alert("Error: " + response.error);
                             return;
                         }
-            
+
                         var subtree = response.subtree;
                         var parentNode = response.parent;
-            
-                        // 新しいノードを処理
+
                         var newNodes = partition.nodes(subtree);
                         var newMaxdepth = d3.max(newNodes, function(d) { return d.depth; });
                         y.domain([0, newMaxdepth > levels ? levels / newMaxdepth : 1]).range([0, maxradius]);
-            
+
                         svg.selectAll("path").remove();
-                    
+                
                         path = svg.selectAll("path")
                             .data(newNodes)
                             .enter().append("path")
@@ -140,10 +131,9 @@
                             .on("click", click)
                             .on("mouseover", mouseover)
                             .on("mouseout", mouseout);
-                    
+
                         updateNodeCount(newNodes);
-            
-                        // 親ノードの処理（必要に応じて表示や操作を追加）
+
                         if (parentNode) {
                             console.log("Parent node:", parentNode);
                             // 親ノードに関する処理を追加（表示など）
@@ -161,42 +151,42 @@
                 let [L, a, b] = polarToCIELab(distance, angle, maxradius);
                 return LabToHex(L, a, b);
             }
-        
+
             function mouseover(d) {
                 let nodeColor = d3.select(this).style("fill");
                 let labColor = d3.lab(nodeColor);
-        
+
                 var r = y(d.y + d.dy / 2);
                 var theta = x(d.x + d.dx) - x(d.x);
                 var rTheta = r * theta;
-        
+
                 tooltip.style("visibility", "visible")
                     .html(`Node: ${d.name}<br>r: ${r.toFixed(2)}, θ: ${theta.toFixed(2)}<br>r * θ: ${rTheta.toFixed(2)}<br>Color (CIELab): ${labColor.toString()}`);
             }
-        
+
             function mouseout(d) {
                 tooltip.style("visibility", "hidden");
             }
-        
+
             svg.on("mousemove", function() {
                 tooltip.style("top", (d3.event.pageY + 10) + "px")
                        .style("left", (d3.event.pageX + 10) + "px");
             });
         }
-        
+
         function polarToCIELab(distance, angle, maxDistance) {
             let L = 100 * (1 - 3 * distance / (4 * maxDistance));
             let a = 160 * distance / maxDistance * Math.cos(angle);
             let b = 160 * distance / maxDistance * Math.sin(angle);
             return [L, a, b];
         }
-        
+
         function LabToHex(L, a, b) {
             let labColor = d3.lab(L, a, b);
             let rgbColor = labColor.rgb();
             return rgbColor.toString();
         }
-        
+
         function updateNodeCount(nodes) {
             var visibleNodes = nodes.filter(function(d) {
                 return isNodeVisible(d, x.domain(), y.domain());

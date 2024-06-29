@@ -8,7 +8,7 @@ def load_viruses():
     with open('dataset/viruses.json') as f:
         return json.load(f)
 
-# 特定のノードから深さ5までのノードを取得する関数
+# 特定のノードとその親ノードを見つけ、深さ5までのノードを取得する関数
 def get_subtree_with_parent(root, target_name, depth=5):
     def find_node_with_parent(node, name, parent=None):
         if node['name'] == name:
@@ -16,7 +16,7 @@ def get_subtree_with_parent(root, target_name, depth=5):
         if 'children' in node:
             for child in node['children']:
                 result = find_node_with_parent(child, name, node)
-                if result:
+                if result[0]:
                     return result
         return None, None
 
