@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 # データを読み込む関数
 def load_data():
-    with open('dataset/simple.json') as f:
+    with open('dataset/viruses.json') as f:
         data = json.load(f)
     return data
 
